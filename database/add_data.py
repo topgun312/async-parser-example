@@ -12,7 +12,7 @@ class AddDataToDataBase:
         Метод класса для загрузки обработанных данных в таблицу "spimex_trading" базы данных
         """
 
-        dataframe_list = await ProcessingData().create_dataframe_list()
+        dataframe_list = ProcessingData().create_dataframe_list()
         conn = await asyncpg.connect(database=f"{DB_NAME}")
         try:
             for df_item in dataframe_list:

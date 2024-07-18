@@ -10,7 +10,7 @@ class ProcessingData:
     dir = pathlib.Path.cwd() / "excel_files"
     path = r"/excel_files/"
 
-    async def create_dataframe_list(self) -> list[DataFrame]:
+    def create_dataframe_list(self) -> list[DataFrame]:
         """
         Метод для создания списка датафреймов
         """
@@ -22,12 +22,13 @@ class ProcessingData:
                     correct_date = re.search(
                         "([0-9]{2}\.[0-9]{2}\.[0-9]{4})", file.name
                     ).group(1)
-                    df_1 = await self.data_and_dates_extraction_from_file(file)
-                    df_2 = await self.column_renaming_and_filtering_df(df_1)
-                    df_3 = await self.adding_new_columns_and_removing_extra_rows(
+                    df_1 = self.data_and_dates_extraction_from_file(file)
+                    df_2 = self.column_renaming_and_filtering_df(df_1)
+                    df_3 = self.adding_new_columns(
                         df_2, correct_date
                     )
-                    dataframe_list.append(df_3)
+                    df_finish = self.column_renaming_and_filtering_df(df_3)
+                    dataframe_list.append(df_finish)
             logger.info("Данные в список датафреймов добавлены успешно!")
             return dataframe_list
         except Exception as ex:
@@ -35,7 +36,7 @@ class ProcessingData:
                 "Ошибка создания списка датафреймов: " + str(ex), exc_info=True
             )
 
-    async def data_and_dates_extraction_from_file(
+    def data_and_dates_extraction_from_file(
         self, file: pathlib.Path
     ) -> DataFrame:
         """
@@ -50,7 +51,7 @@ class ProcessingData:
         df = df.iloc[index:, [1, 2, 3, 4, 5, 14]]
         return df
 
-    async def column_renaming_and_filtering_df(self, df: DataFrame) -> DataFrame:
+    def column_renaming_and_filtering_df(self, df: DataFrame) -> DataFrame:
         """
         Метод для переименования столбцов датафрейма и его фильтрации
         """
@@ -69,11 +70,11 @@ class ProcessingData:
         df = df[df["count"] != "-"]
         return df
 
-    async def adding_new_columns_and_removing_extra_rows(
+    def adding_new_columns(
         self, df: DataFrame, correct_date: str
     ) -> DataFrame:
         """
-        Метод для добавления новых и удаления не нужных столбцов
+        Метод для добавления новых столбцов
         """
 
         df.insert(loc=2, column="oil_id", value=df["exchange_product_id"].str[:4])
@@ -88,6 +89,14 @@ class ProcessingData:
             value=df["exchange_product_id"].str[-1],
         )
         df.insert(loc=9, column="date", value=correct_date)
+        return df
+
+    def replacing_nan_values_and_removing_unnecessary_rows(
+            self, df: DataFrame
+    ) -> DataFrame:
+        """
+        Метод для замены Nan значений датафрейма и удаления не нужных столбцов
+        """
         df = df.fillna("-")
         df = df.iloc[2:]
         df = df.iloc[:-2]
